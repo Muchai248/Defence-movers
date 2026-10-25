@@ -1,0 +1,96 @@
+# Config schema version.
+version: 2
+
+# Stable repository identity used for user-local global database storage.
+memory_key: memory
+
+# Database storage mode. Global databases are generated per checkout and are never canonical memory.
+database_scope: global
+
+# Default CLI format for query, context, show and audit. Explicit --format-version overrides this.
+retrieval:
+  default_format_version: 2
+
+# Canonical memory source directory. The file patterns below are relative to this path.
+memory_root: docs/agent-memory
+
+# Generated SQLite cache for local mode. Global database paths are user-local generated state,
+# never committed canonical memory. Keep the local path under an ignored directory.
+database_path: .agent-memory/memory.sqlite
+
+# Claim Markdown files. Use this to split or relocate atomic claim documents.
+claims:
+  - claims/**/*.md
+
+# Relationship graph YAML files. Use these to connect claims across systems.
+graphs:
+  - graph/**/*.yaml
+
+# Index YAML files. Use these to map watched source files to relevant memory.
+indexes:
+  - indexes/**/*.yaml
+
+# Recipe YAML files. Use these for repeatable workflows agents should follow.
+recipes:
+  - recipes/**/*.yaml
+
+# Plan template YAML files. Use these for reusable staged workflows.
+plans:
+  - plans/**/*.yaml
+
+# Profile trait YAML files. Use these for small composable retrieval and output guidance.
+profiles:
+  - profiles/**/*.yaml
+
+# Coverage waiver YAML files. Use these for intentional memory coverage exceptions.
+waivers:
+  - waivers/**/*.yaml
+
+# Managed repository instruction files. init and upgrade preserve local content outside each managed section.
+agent_instructions:
+  paths:
+    - AGENTS.md
+
+# Agent instruction output paths. Disable an agent or change where its skill file is installed.
+agent_skills:
+  codex:
+    enabled: true
+    path: .codex/skills/repo-memory/SKILL.md
+  generic:
+    enabled: false
+    path: docs/agent-memory/AGENT_SKILL.md
+
+# Repo-relative source paths eligible for claims. Empty allow means all paths; deny always wins.
+claim_sources:
+  allow: []
+  deny: []
+
+# Git hook settings. install-hooks reads this list when creating non-blocking sync hooks.
+git:
+  install_hooks: true
+  hooks:
+    - post-merge
+    - post-checkout
+    - post-rewrite
+
+# Validation rules for canonical memory. Loosen only when migrating existing docs.
+validation:
+  require_source_files: true
+  require_verification: true
+  reject_multi_claim_documents: true
+  require_unique_titles_within_system: true
+  require_claim_file_matches_id: false
+  max_claim_frontmatter_length: 900
+  max_claim_section_length: 1200
+
+# Defaults for agent-memory context when command flags are omitted.
+context:
+  default_budget: medium
+  default_depth: 1
+  include_inferred_edges_by_default: false
+  recipe_match_limit: 3
+  profile_trait_limit: 5
+  plan_template_suggestion_limit: 3
+  include_profile_traits: true
+  include_recipe_diagnostics: true
+  include_profile_diagnostics: true

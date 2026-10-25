@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Brain UI - Neural Memory Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #eaeaea;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .main {
+            flex: 1;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+            color: #00ff88;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+            border: none;
+            border-radius: 5px;
+            color: #1a1a2e;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        button.reset {
+            background: linear-gradient(135deg, #ff6b6b 0%, #f38181 100%);
+        }
+
+        #brainCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .stats {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .stat-value {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .node-info {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #00d4ff;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .node-info h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .node-info p {
+            font-size: 12px;
+            color: #ccc;
+            margin: 5px 0;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #00d4ff;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>🧠 Brain UI</h1>
+            <p style="color: #aaa; font-size: 12px; margin-bottom: 20px;">
+                Neural Memory Visualization for OSINT Data
+            </p>
+
+            <h2>Analysis Type</h2>
+            <div class="control-group">
+                <select id="analysisType">
+                    <option value="geolocation">🌍 IP Geolocation</option>
+                    <option value="hash">🔐 Hash Analysis</option>
+                    <option value="log">📋 Log Analysis</option>
+                    <option value="social">👥 Social Media</option>
+                    <option value="incident">🚨 Incident Response</option>
+                </select>
+            </div>
+
+            <h2>Input Data</h2>
+            <div class="control-group">
+                <label id="inputLabel">IP Address</label>
+                <input type="text" id="inputData" placeholder="8.8.8.8" value="8.8.8.8">
+            </div>
+
+            <div class="control-group" id="textareaGroup" style="display: none;">
+                <label>Content</label>
+                <textarea id="textContent" rows="4" placeholder="Enter text to analyze..."></textarea>
+            </div>
+
+            <button onclick="analyze()">🔬 Analyze</button>
+            <button class="reset" onclick="resetMemory()">🔄 Reset Memory</button>
+
+            <div class="stats">
+                <h2>Memory Stats</h2>
+                <div class="stat-item">
+                    <span class="stat-label">Nodes</span>
+                    <span class="stat-value" id="nodeCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Connections</span>
+                    <span class="stat-value" id="connectionCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Updated</span>
+                    <span class="stat-value" id="lastUpdated">-</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 11px; color: #666;">
+                <p>Move mouse over nodes to see details</p>
+                <p>Click and drag to move nodes</p>
+            </div>
+        </div>
+
+        <div class="main">
+            <canvas id="brainCanvas"></canvas>
+            <div class="node-info" id="nodeInfo">
+                <h3 id="nodeTitle">Node Info</h3>
+                <p id="nodeDetails"></p>
+            </div>
+            <div class="loading" id="loading">Processing...</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('brainCanvas');
+        const ctx = canvas.getContext('2d');
+        const nodeInfo = document.getElementById('nodeInfo');
+
+        let nodes = [];
+        let connections = [];
+        let animationId;
+        let selectedNode = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Update input label based on analysis type
+        document.getElementById('analysisType').addEventListener('change', function() {
+            const type = this.value;
+            const label = document.getElementById('inputLabel');
+            const input = document.getElementById('inputData');
+            const textareaGroup = document.getElementById('textareaGroup');
+
+            textareaGroup.style.display = 'none';
+
+            switch(type) {
+                case 'geolocation':
+                    label.textContent = 'IP Address';
+                    input.placeholder = '8.8.8.8';
+                    input.value = '8.8.8.8';
+                    break;
+                case 'hash':
+                    label.textContent = 'Text to Hash';
+                    input.placeholder = 'Enter text...';
+                    input.value = 'test string';
+                    textareaGroup.style.display = 'block';
+                    break;
+                case 'log':
+                    label.textContent = 'Log Entry';
+                    input.placeholder = 'Enter log...';
+                    input.value = 'Failed login from 192.168.1.1';
+                    textareaGroup.style.display = 'block';
+                    break;
+                case 'social':
+                    label.textContent = 'Profiles';
+                    input.placeholder = 'https://twitter.com/user';
+                    input.value = 'Check https://twitter.com/user and https://github.com/user';
+                    textareaGroup.style.display = 'block';
+                    break;
+                case 'incident':
+                    label.textContent = 'Incident Type';
+                    input.placeholder = 'phishing';
+                    input.value = 'phishing';
+                    break;
+            }
+        });
+
+        // Analyze function
+        async function analyze() {
+            try {
+                const type = document.getElementById('analysisType').value;
+                const inputData = document.getElementById('inputData').value;
+                const textContent = document.getElementById('textContent').value;
+
+                document.getElementById('loading').classList.add('active');
+
+                const payload = {
+                    type: type,
+                    content: textContent || inputData
+                };
+
+                if (type === 'geolocation') {
+                    payload.ip = inputData;
+                } else if (type === 'incident') {
+                    payload.incident_data = {
+                        type: inputData,
+                        severity: 'high',
+                        description: 'Manual incident report'
+                    };
+                }
+
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                nodes = data.nodes || [];
+                connections = data.connections || [];
+
+                updateStats();
+                animate();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Analysis failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // Reset memory
+        async function resetMemory() {
+            try {
+                await fetch('/api/reset');
+                nodes = [];
+                connections = [];
+                updateStats();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('nodeCount').textContent = nodes.length;
+            document.getElementById('connectionCount').textContent = connections.length;
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw connections
+            connections.forEach(conn => {
+                const source = nodes.find(n => n.id === conn.source);
+                const target = nodes.find(n => n.id === conn.target);
+
+                if (source && target) {
+                    const gradient = ctx.createLinearGradient(
+                        source.x / 100 * canvas.width,
+                        source.y / 100 * canvas.height,
+                        target.x / 100 * canvas.width,
+                        target.y / 100 * canvas.height
+                    );
+                    gradient.addColorStop(0, source.color);
+                    gradient.addColorStop(1, target.color);
+
+                    ctx.beginPath();
+                    ctx.moveTo(source.x / 100 * canvas.width, source.y / 100 * canvas.height);
+                    ctx.lineTo(target.x / 100 * canvas.width, target.y / 100 * canvas.height);
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = conn.strength * 3;
+                    ctx.globalAlpha = 0.6;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+            });
+
+            // Draw nodes
+            nodes.forEach(node => {
+                const x = node.x / 100 * canvas.width;
+                const y = node.y / 100 * canvas.height;
+                const size = node.size;
+
+                // Glow effect
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 2);
+                gradient.addColorStop(0, node.color);
+                gradient.addColorStop(0.5, node.color + '80');
+                gradient.addColorStop(1, 'transparent');
+
+                ctx.beginPath();
+                ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Main node
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = node.color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#fff';
+                ctx.font = `${Math.max(10, size / 2)}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.label, x, y + size + 15);
+            });
+
+            if (nodes.length > 0) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (isDragging && selectedNode) {
+                selectedNode.x = (mouseX - dragOffset.x) / canvas.width * 100;
+                selectedNode.y = (mouseY - dragOffset.y) / canvas.height * 100;
+                return;
+            }
+
+            let hoveredNode = null;
+            nodes.forEach(node => {
+                const x = node.x / 100 * canvas.width;
+                const y = node.y / 100 * canvas.height;
+                const distance = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
+
+                if (distance < node.size) {
+                    hoveredNode = node;
+                }
+            });
+
+            if (hoveredNode) {
+                nodeInfo.style.display = 'block';
+                nodeInfo.style.left = (e.clientX + 15) + 'px';
+                nodeInfo.style.top = (e.clientY + 15) + 'px';
+                document.getElementById('nodeTitle').textContent = hoveredNode.label;
+                document.getElementById('nodeDetails').innerHTML = `
+                    <p><strong>Type:</strong> ${hoveredNode.type}</p>
+                    <p><strong>Size:</strong> ${hoveredNode.size}</p>
+                    <p><strong>Position:</strong> (${hoveredNode.x.toFixed(1)}%, ${hoveredNode.y.toFixed(1)}%)</p>
+                `;
+                canvas.style.cursor = 'pointer';
+            } else {
+                nodeInfo.style.display = 'none';
+                canvas.style.cursor = 'default';
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            nodes.forEach(node => {
+                const x = node.x / 100 * canvas.width;
+                const y = node.y / 100 * canvas.height;
+                const distance = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
+
+                if (distance < node.size) {
+                    selectedNode = node;
+                    isDragging = true;
+                    dragOffset.x = mouseX - x;
+                    dragOffset.y = mouseY - y;
+                }
+            });
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            selectedNode = null;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            selectedNode = null;
+            nodeInfo.style.display = 'none';
+        });
+
+        // Initial draw
+        function drawBackground() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00d4ff';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🧠 Brain UI - Neural Memory Visualization', canvas.width / 2, canvas.height / 2 - 20);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText('Select an analysis type and click Analyze to visualize data', canvas.width / 2, canvas.height / 2 + 20);
+        }
+
+        drawBackground();
+    </script>
+</body>
+</html>

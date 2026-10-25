@@ -1,0 +1,2 @@
+# This directory is used for local file communication between the Obsidian plugin and Python backend
+# Do not commit actual request/response files to version control

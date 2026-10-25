@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-osint-plugin",
+  "name": "OSINT Tool",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "OSINT tool with Python backend for data analysis, machine learning, and intelligence gathering",
+  "author": "Your Name",
+  "authorUrl": "https://github.com/yourusername",
+  "isDesktopOnly": false
+}
